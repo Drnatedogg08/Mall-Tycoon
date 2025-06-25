@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8" />
+  <title>Mall Mogul Tycoon - Expanded</title>
+  <style>
+    body {
+      background: linear-gradient(to right, #ffecd2, #fcb69f);
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 30px;
+      color: #333;
+      overflow-x: hidden;
+      user-select: none;
+      position: relative;
+      min-height: 100vh;
+    }
+
+    h1 {
+      font-size: 3em;
+      margin-bottom: 10px;
+      user-select: text;
+    }
+
+    #money {
+      font-size: 2em;
+      margin-bottom: 20px;
+      transition: transform 0.3s ease;
+      position: relative;
+      user-select: text;
+    }
+
+    /* Floating +$X text animation */
+    .income-float {
+      position: absolute;
+      font-weight: bold;
+      color: #2ecc71;
+      top: -30px;
+      right: 0;
+      opacity: 1;
+      animation: floatUp 1s ease forwards;
+      pointer-events: none;
+      user-select: none;
+      text-shadow: 0 0 6px #2ecc71;
+    }
+
+    @keyframes floatUp {
+      0% { transform: translateY(0); opacity: 1; }
+      100% { transform: translateY(-40px); opacity: 0; }
+    }
+
+    #mall {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 30px;
+      margin-bottom: 50px;
+      perspective: 900px;
+      max-width: 1100px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Base 3D store styles */
+    .store-3d {
+      width: 250px;
+      height: 220px;
+      position: relative;
+      transform-style: preserve-3d;
+      transform-origin: center;
+      transition: transform 0.6s ease;
+      cursor: pointer;
+      margin: 0 auto;
+      border-radius: 15px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.25);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 20px;
+      box-sizing: border-box;
+      user-select: none;
+      overflow: visible;
+    }
+
+    .store-3d:hover {
+      transform: rotateY(15deg);
+    }
+
+    /* Faces */
+    .face-front {
+      position: absolute;
+      width: 250px;
+      height: 220px;
+      border-radius: 15px;
+      box-sizing: border-box;
+      padding: 20px;
+      backface-visibility: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: inset 0 0 40px rgba(255,255,255,0.1);
+      overflow: visible;
+    }
+
+    .face-side {
+      position: absolute;
+      width: 40px;
+      height: 220px;
+      border-radius: 0 10px 10px 0;
+      right: -40px;
+      top: 0;
+      box-shadow: inset 0 0 30px rgba(0,0,0,0.5);
+      transform: rotateY(90deg);
+      transform-origin: left;
+      backface-visibility: hidden;
+      overflow: visible;
+    }
+
+    /* Coffee store */
+    .coffee .face-front {
+      background: #6f4e37;
+      position: relative;
+    }
+    .coffee .face-side {
+      background: #543a28;
+    }
+
+    /* Steam animation container */
+    .steam-container {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      width: 30px;
+      height: 60px;
+      pointer-events: none;
+      user-select: none;
+      overflow: visible;
+    }
+
+    .steam-line {
+      position: absolute;
+      bottom: 0;
+      width: 3px;
+      height: 30px;
+      border-radius: 50% 50% 50% 50% / 100% 100% 0 0;
+      background: rgba(255, 255, 255, 0.7);
+      filter: blur(2px);
+      animation: steamRise 3s ease-in-out infinite;
+      opacity: 0;
+    }
+    .steam-line:nth-child(1) {
+      left: 0;
+      animation-delay: 0s;
+      opacity: 1;
+      height: 28px;
+    }
+    .steam-line:nth-child(2) {
+      left: 10px;
+      animation-delay: 1s;
+      opacity: 1;
+      height: 35px;
+    }
+    .steam-line:nth-child(3) {
+      left: 20px;
+      animation-delay: 2s;
+      opacity: 1;
+      height: 25px;
+    }
+
+    @keyframes steamRise {
+      0% {
+        transform: translateY(10px) scaleX(0.6);
+        opacity: 0.6;
+      }
+      50% {
+        opacity: 0.3;
+      }
+      100% {
+        transform: translateY(-40px) scaleX(1);
+        opacity: 0;
+      }
+    }
+
+    /* Shoe store */
+    .shoes .face-front {
+      background: #3a6073;
+      position: relative;
+    }
+    .shoes .face-side {
+      background: #2b4552;
+    }
+
+    /* Arcade */
+    .arcade .face-front {
+      background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+      position: relative;
+      overflow: visible;
+    }
+    .arcade .face-side {
+      background: linear-gradient(135deg, #5010a5 0%, #1a52c1 100%);
+    }
+
+    /* Neon arcade glow */
+    .arcade-glow {
+      position: absolute;
+      top: 5px;
+      left: 10px;
+      right: 10px;
+      height: 10px;
+      border-radius: 5px;
+      box-shadow:
+        0 0 8px #ff00ff,
+        0 0 20px #ff00ff,
+        0 0 30px #ff00ff;
+      animation: neonBlink 2s infinite alternate;
+      pointer-events: none;
+      user-select: none;
+    }
+    @keyframes neonBlink {
+      0% { opacity: 0.6; }
+      100% { opacity: 1; }
+    }
+
+    /* Luxury boutique */
+    .luxury .face-front {
+      background: #1c1c1c;
+      border: 2px solid gold;
+      position: relative;
+      overflow: visible;
+    }
+    .luxury .face-side {
+      background: #111111;
+      border-right: 2px solid gold;
+    }
+
+    /* Sparkling diamonds */
+    .sparkle {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: radial-gradient(circle, #fff 60%, transparent 70%);
+      box-shadow: 0 0 6px 2px gold;
+      border-radius: 50%;
+      animation: sparkleAnim 2.5s infinite alternate;
+      pointer-events: none;
+      user-select: none;
+      opacity: 0.8;
+    }
+    @keyframes sparkleAnim {
+      0% { opacity: 0.2; transform: scale(0.8); }
+      100% { opacity: 1; transform: scale(1.2); }
+    }
+
+    /* Place sparkles at different spots */
+    .sparkle1 { top: 20px; left: 30px; animation-delay: 0s; }
+    .sparkle2 { top: 60px; left: 180px; animation-delay: 1s; }
+    .sparkle3 { top: 140px; left: 110px; animation-delay: 1.5s; }
+    .sparkle4 { top: 100px; left: 60px; animation-delay: 2s; }
+
+    /* Manager badge */
+    .manager-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 28px;
+      height: 28px;
+      background: gold;
+      border-radius: 50%;
+      box-shadow: 0 0 10px 2px gold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #333;
+      font-size: 20px;
+      animation: pulseGlow 2s infinite alternate;
+      pointer-events: none;
+      user-select: none;
+      z-index: 10;
+    }
+
+    @keyframes pulseGlow {
+      0% { box-shadow: 0 0 10px 2px gold; }
+      100% { box-shadow: 0 0 20px 6px gold; }
+    }
+
+    .store-3d h3 {
+      font-size: 1.5em;
+      margin: 0;
+    }
+
+    .icon {
+      font-size: 2.5em;
+      margin-bottom: 5px;
+      user-select: none;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 1em;
+      margin-top: 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background-color: rgba(255, 255, 255, 0.8);
+      color: #333;
+      transition: transform 0.2s ease, opacity 0.3s ease;
+      user-select: none;
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    button:hover:not(:disabled) {
+      background-color: #fff;
+    }
+
+    button:active:not(:disabled) {
+      transform: scale(0.95);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    .shopper {
+      position: absolute;
+      bottom: 10px;
+      width: 30px;
+      height: 30px;
+      background-color: #333;
+      border-radius: 50%;
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
+      z-index: 5;
+      user-select: none;
+    }
+
+    @keyframes walkAcross {
+      0% { left: -50px; }
+      100% { left: 100vw; }
+    }
+    .shopper::before {
+      content: "";
+      display: block;
+      width: 10px;
+      height: 10px;
+      background-color: gold;
+      border-radius: 2px;
+      position: absolute;
+      top: 50%;
+      left: 100%;
+      transform: translateY(-50%);
+    }
+
+    /* Expansion button style */
+    #expand-wing-btn {
+      padding: 15px 30px;
+      font-size: 1.2em;
+      border-radius: 8px;
+      border: none;
+      background: linear-gradient(90deg, #32a852, #2a7a3e);
+      color: white;
+      cursor: pointer;
+      margin: 20px auto;
+      display: none;
+      box-shadow: 0 5px 15px rgba(50,168,82,0.6);
+      transition: background 0.3s ease;
+      user-select: none;
+    }
+    #expand-wing-btn:hover {
+      background: linear-gradient(90deg, #2a7a3e, #32a852);
+    }
+    #expand-wing-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    /* Wings container label */
+    #wings-label {
+      font-size: 1.4em;
+      margin-bottom: 15px;
+      font-weight: bold;
+      color: #555;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>🏬 Mall Mogul Tycoon - Expanded Wings & Managers</h1>
+  <div id="money">Money: $0</div>
+  <button id="expand-wing-btn" title="Unlock a new mall wing!">Unlock New Wing - $5000</button>
+  <div id="wings-label">Mall Wings: 1</div>
+  <div id="mall"></div>
+
+  <script>
+    let money = 0;
+    let lastDisplayedMoney = -1;
+
+    // Each wing has 4 stores
+    const wings = [
+      [
+        { name: "Tiny Coffee Shop", icon: "☕", theme: "coffee", baseIncome: 1, income: 1, cost: 20, owned: true, manager: false },
+        { name: "Shoe Store", icon: "👟", theme: "shoes", baseIncome: 5, income: 5, cost: 100, owned: false, manager: false },
+        { name: "Arcade", icon: "🕹️", theme: "arcade", baseIncome: 15, income: 15, cost: 300, owned: false, manager: false },
+        { name: "Luxury Boutique", icon: "💎", theme: "luxury", baseIncome: 50, income: 50, cost: 1000, owned: false, manager: false }
+      ],
+      [
+        { name: "Bookstore", icon: "📚", theme: "books", baseIncome: 10, income: 10, cost: 400, owned: false, manager: false },
+        { name: "Food Court", icon: "🍔", theme: "food", baseIncome: 20, income: 20, cost: 700, owned: false, manager: false },
+        { name: "Cinema", icon: "🎬", theme: "cinema", baseIncome: 35, income: 35, cost: 1500, owned: false, manager: false },
+        { name: "Toy Store", icon: "🧸", theme: "toy", baseIncome: 25, income: 25, cost: 900, owned: false, manager: false }
+      ]
+    ];
+
+    let currentWingsUnlocked = 1;
+
+    // Merge wings into single array for simplicity in UI and logic
+    function getAllStores() {
+      return wings.slice(0, currentWingsUnlocked).flat();
+    }
+
+    // Colors for new themes
+    const themeStyles = {
+      coffee: { front: "#6f4e37", side: "#543a28" },
+      shoes: { front: "#3a6073", side: "#2b4552" },
+      arcade: { front: "linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)", side: "linear-gradient(135deg, #5010a5 0%, #1a52c1 100%)" },
+      luxury: { front: "#1c1c1c", side: "#111111", border: "2px solid gold", borderSide: "2px solid gold" },
+
+      books: { front: "#4a90e2", side: "#3562a1" },
+      food: { front: "#e27d60", side: "#b35440" },
+      cinema: { front: "#8e44ad", side: "#6c3483" },
+      toy: { front: "#f7c873", side: "#c6a354" },
+    };
+
+    // Store DOM and state management
+    const mallDiv = document.getElementById("mall");
+    const moneyDiv = document.getElementById("money");
+    const expandBtn = document.getElementById("expand-wing-btn");
+    const wingsLabel = document.getElementById("wings-label");
+
+    function buildStoresUI() {
+      mallDiv.innerHTML = "";
+      const stores = getAllStores();
+
+      stores.forEach((store, index) => {
+        const storeDiv = document.createElement("div");
+        storeDiv.className = `store-3d ${store.theme}`;
+        storeDiv.id = `store-${index}`;
+
+        // Set theme colors dynamically
+        const theme = themeStyles[store.theme];
+        let frontStyle = `background:${theme.front};`;
+        let sideStyle = `background:${theme.side};`;
+        if(theme.border) {
+          frontStyle += `border:${theme.border};`;
+          sideStyle += `border-right:${theme.borderSide};`;
+        }
+
+        let innerHTML = `
+          <div class="face-front" style="${frontStyle}">
+            <div class="icon">${store.icon}</div>
+            <h3>${store.name}</h3>
+            <p>Income: <span id="income-${index}">$${store.income}/sec</span></p>
+            <button id="button-${index}"></button>
+            ${store.owned ? `<button id="manager-btn-${index}" style="margin-top:8px;"></button>` : ''}
+          </div>
+          <div class="face-side" style="${sideStyle}"></div>
+        `;
+
+        // Decorations
+        if (store.theme === "coffee") {
+          innerHTML += `
+            <div class="steam-container">
+              <div class="steam-line"></div>
+              <div class="steam-line"></div>
+              <div class="steam-line"></div>
+            </div>
+          `;
+        }
+        if (store.theme === "arcade") {
+          innerHTML += `<div class="arcade-glow"></div>`;
+        }
+        if (store.theme === "luxury") {
+          innerHTML += `
+            <div class="sparkle sparkle1"></div>
+            <div class="sparkle sparkle2"></div>
+            <div class="sparkle sparkle3"></div>
+            <div class="sparkle sparkle4"></div>
+          `;
+        }
+
+        storeDiv.innerHTML = innerHTML;
+
+        // Manager badge
+        if(store.manager){
+          const badge = document.createElement("div");
+          badge.className = "manager-badge";
+          badge.textContent = "M";
+          storeDiv.appendChild(badge);
+        }
+
+        mallDiv.appendChild(storeDiv);
+
+        const button = document.getElementById(`button-${index}`);
+        updateButton(index);
+        button.onclick = () => {
+          if (store.owned) {
+            upgradeStore(index);
+          } else {
+            buyStore(index);
+      }
+    };
+
+    // Manager button
+    if (store.owned) {
+      const managerBtn = document.getElementById(`manager-btn-${index}`);
+      updateManagerButton(index);
+      managerBtn.onclick = () => hireManager(index);
+    }
+  });
+
+  wingsLabel.textContent = `Mall Wings: ${currentWingsUnlocked}`;
+}
+
+function updateButton(index) {
+  const store = getAllStores()[index];
+  const button = document.getElementById(`button-${index}`);
+  if (store.owned) {
+    button.textContent = `Upgrade (+$${store.baseIncome}) - $${store.cost}`;
+    button.disabled = money < store.cost;
+  } else {
+    button.textContent = `Buy Store - $${store.cost}`;
+    button.disabled = money < store.cost;
+  }
+}
+
+function updateManagerButton(index) {
+  const store = getAllStores()[index];
+  const button = document.getElementById(`manager-btn-${index}`);
+  if (store.manager) {
+    button.textContent = "Manager Hired ✔️";
+    button.disabled = true;
+  } else {
+    const managerCost = store.cost * 3;
+    button.textContent = `Hire Manager - $${managerCost}`;
+    button.disabled = money < managerCost;
+  }
+}
+
+function showIncomeFloat(amount) {
+  const floatText = document.createElement("span");
+  floatText.className = "income-float";
+  floatText.textContent = `+$${amount}`;
+  moneyDiv.appendChild(floatText);
+  setTimeout(() => {
+    floatText.remove();
+  }, 1000);
+}
+
+function updateUI() {
+  const roundedMoney = Math.floor(money);
+  if (roundedMoney !== lastDisplayedMoney) {
+    moneyDiv.textContent = `Money: $${roundedMoney}`;
+    lastDisplayedMoney = roundedMoney;
+  }
+
+  buildStoresUI();
+
+  // Expansion logic
+  if (currentWingsUnlocked < wings.length && money >= 5000) {
+    expandBtn.style.display = "block";
+  } else {
+    expandBtn.style.display = "none";
+  }
+}
+
+function upgradeStore(index) {
+  const store = getAllStores()[index];
+  if (money >= store.cost) {
+    money -= store.cost;
+    store.income += store.baseIncome;
+    store.cost = Math.floor(store.cost * 1.5);
+    updateUI();
+  }
+}
+
+function buyStore(index) {
+  const store = getAllStores()[index];
+  if (money >= store.cost) {
+    money -= store.cost;
+    store.owned = true;
+    updateUI();
+  }
+}
+
+function hireManager(index) {
+  const store = getAllStores()[index];
+  const cost = store.cost * 3;
+  if (money >= cost && !store.manager) {
+    money -= cost;
+    store.manager = true;
+    updateUI();
+  }
+}
+
+setInterval(() => {
+  let totalIncome = 0;
+  getAllStores().forEach(store => {
+    if (store.owned) {
+      money += store.income;
+      totalIncome += store.income;
+    }
+  });
+  if (totalIncome > 0) showIncomeFloat(totalIncome);
+  updateUI();
+}, 1000);
+
+// Auto-upgrade via managers
+setInterval(() => {
+  getAllStores().forEach((store, i) => {
+    if (store.owned && store.manager && money >= store.cost) {
+      upgradeStore(i);
+    }
+  });
+}, 10000);
+
+function spawnShopper() {
+  const shopper = document.createElement("div");
+  shopper.className = "shopper";
+  shopper.style.top = `${Math.random() * 300 + 200}px`;
+  const speed = Math.random() * 4 + 4;
+  const size = Math.random() * 15 + 15;
+  shopper.style.width = `${size}px`;
+  shopper.style.height = `${size}px`;
+  shopper.style.animation = `walkAcross ${speed}s linear`;
+  document.body.appendChild(shopper);
+  setTimeout(() => shopper.remove(), speed * 1000);
+}
+
+setInterval(spawnShopper, 1500);
+
+expandBtn.onclick = () => {
+  if (money >= 5000) {
+    money -= 5000;
+    currentWingsUnlocked++;
+    updateUI();
+  }
+};
+
+// Start game
+updateUI();
+  </</script>
+   </body>
+    </html> ```
