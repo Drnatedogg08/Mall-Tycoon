@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Mall Mogul Tycoon - Ultimate Edition</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    padding: 30px;
+    text-align: center;
+    background: linear-gradient(to right, #ffecd2, #fcb69f);
+    overflow-x: hidden;
+    position: relative;
+    user-select: none;
+  }
+  h1 {
+    font-size: 2.5em;
+    margin-bottom: 5px;
+  }
+  #money {
+    font-size: 1.7em;
+    margin-bottom: 10px;
+    position: relative;
+    font-weight: bold;
+    user-select: text;
+  }
+  #prestigePoints {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #8e44ad; /* Purple color for prestige */
+    margin-bottom: 15px;
+    user-select: text;
+  }
+  #levelContainer {
+    margin: 10px auto 30px auto;
+    width: 320px;
+    background: #eee;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: inset 0 0 5px #aaa;
+    height: 24px;
+  }
+  #levelBar {
+    height: 100%;
+    background: linear-gradient(90deg, #f39c12, #f1c40f);
+    width: 0%;
+    transition: width 1s ease-out;
+  }
+  #levelText {
+    font-weight: bold;
+    margin-bottom: 25px;
+    user-select: text;
+  }
+  .float-money {
+    position: absolute;
+    color: #27ae60;
+    font-weight: bold;
+    animation: riseFade 1s ease-out forwards;
+    pointer-events: none;
+    user-select: none;
+    font-size: 1.2em;
+  }
+  @keyframes riseFade {
+    0% { opacity: 1; top: 0; }
+    100% { opacity: 0; top: -30px; }
+  }
+  .store {
+    border: 2px solid #333;
+    padding: 15px;
+    margin: 10px;
+    border-radius: 10px;
+    display: inline-block;
+    width: 220px;
+    background: #fff;
+    position: relative;
+    user-select: none;
+    cursor: pointer;
+    perspective: 900px;
+    transform-style: preserve-3d;
+    transition: transform 0.5s ease;
+  }
+  .store:hover:not(.locked) {
+    transform: rotateY(15deg) translateY(-8px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  }
+  .store.locked {
+    filter: grayscale(70%);
+    cursor: not-allowed;
+  }
+  .store > div {
+    position: relative;
+    backface-visibility: hidden;
+  }
+  /* Faces */
+  .face-front {
+    width: 220px;
+    height: 180px;
+    border-radius: 12px;
+    box-sizing: border-box;
+    padding: 20px;
+    background: #222;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: inset 0 0 40px rgba(255,255,255,0.15);
+  }
+  .face-side {
+    position: absolute;
+    width: 30px;
+    height: 180px;
+    border-radius: 0 12px 12px 0;
+    right: -30px;
+    top: 0;
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.6);
+    transform: rotateY(90deg);
+    transform-origin: left;
+    background: #111;
+  }
+
+  /* Coffee store */
+  .coffee .face-front {
+    background: #6f4e37;
+    position: relative;
+  }
+  .coffee .face-side {
+    background: #543a28;
+  }
+  .steam-container {
+    position: absolute;
+    top: 10px;
+    left: 15px;
+    width: 30px;
+    height: 60px;
+    pointer-events: none;
+    user-select: none;
+    overflow: visible;
+  }
+  .steam-line {
+    position: absolute;
+    bottom: 0;
+    width: 4px;
+    height: 30px;
+    border-radius: 50% 50% 50% 50% / 100% 100% 0 0;
+    background: rgba(255, 255, 255, 0.7);
+    filter: blur(2px);
+    animation: steamRise 3s ease-in-out infinite;
+    opacity: 0;
+  }
+  .steam-line:nth-child(1) {
+    left: 0;
+    animation-delay: 0s;
+    opacity: 1;
+    height: 28px;
+  }
+  .steam-line:nth-child(2) {
+    left: 10px;
+    animation-delay: 1s;
+    opacity: 1;
+    height: 35px;
+  }
+  .steam-line:nth-child(3) {
+    left: 20px;
+    animation-delay: 2s;
+    opacity: 1;
+    height: 25px;
+  }
+  @keyframes steamRise {
+    0% {
+      transform: translateY(10px) scaleX(0.6);
+      opacity: 0.6;
+    }
+    50% {
+      opacity: 0.3;
+    }
+    100% {
+      transform: translateY(-40px) scaleX(1);
+      opacity: 0;
+    }
+  }
+
+  /* Shoe store */
+  .shoes .face-front {
+    background: #3a6073;
+    position: relative;
+  }
+  .shoes .face-side {
+    background: #2b4552;
+  }
+
+  /* Arcade */
+  .arcade .face-front {
+    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    position: relative;
+    overflow: visible;
+  }
+  .arcade .face-side {
+    background: linear-gradient(135deg, #5010a5 0%, #1a52c1 100%);
+  }
+  .arcade-glow {
+    position: absolute;
+    top: 5px;
+    left: 10px;
+    right: 10px;
+    height: 10px;
+    border-radius: 5px;
+    box-shadow:
+      0 0 8px #ff00ff,
+      0 0 20px #ff00ff,
+      0 0 30px #ff00ff;
+    animation: neonBlink 2s infinite alternate;
+    pointer-events: none;
+    user-select: none;
+  }
+  @keyframes neonBlink {
+    0% { opacity: 0.6; }
+    100% { opacity: 1; }
+  }
+
+  /* Luxury boutique */
+  .luxury .face-front {
+    background: #1c1c1c;
+    border: 2px solid gold;
+    position: relative;
+    overflow: visible;
+  }
+  .luxury .face-side {
+    background: #111111;
+    border-right: 2px solid gold;
+  }
+  .sparkle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: radial-gradient(circle, #fff 60%, transparent 70%);
+    box-shadow: 0 0 6px 2px gold;
+    border-radius: 50%;
+    animation: sparkleAnim 2.5s infinite alternate;
+    pointer-events: none;
+    user-select: none;
+    opacity: 0.8;
+  }
+  @keyframes sparkleAnim {
+    0% { opacity: 0.2; transform: scale(0.8); }
+    100% { opacity: 1; transform: scale(1.2); }
+  }
+  .sparkle1 { top: 20px; left: 30px; animation-delay: 0s; }
+  .sparkle2 { top: 60px; left: 180px; animation-delay: 1s; }
+  .sparkle3 { top: 140px; left: 110px; animation-delay: 1.5s; }
+  .sparkle4 { top: 100px; left: 60px; animation-delay: 2s; }
+
+  /* Electronics */
+  .electronics .face-front {
+    background: #283e51;
+    color: #aad8d3;
+    position: relative;
+  }
+  .electronics .face-side {
+    background: #1e2b36;
+  }
+
+  /* Food court */
+  .foodcourt .face-front {
+    background: #c46a4a;
+    position: relative;
+  }
+  .foodcourt .face-side {
+    background: #7a3f2b;
+  }
+
+  /* Cinema */
+  .cinema .face-front {
+    background: linear-gradient(135deg, #434343 0%, black 100%);
+    position: relative;
+    color: #eee;
+  }
+  .cinema .face-side {
+    background: #222;
+  }
+
+  /* Theme park (NO rotation) */
+  .themepark .face-front {
+    background: #2e8b57;
+    color: #cdeacd;
+    position: relative;
+  }
+  .themepark .face-side {
+    background: #236244;
+  }
+  .themepark {
+    cursor: default;
+  }
+  .themepark:hover {
+    transform: none !important;
+  }
+
+  /* Luxury Car Dealership */
+  .cardealership .face-front {
+    background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); /* Dark blue-grey */
+    color: #ecf0f1;
+    border: 2px solid #f39c12; /* Gold accent */
+  }
+  .cardealership .face-side {
+    background: #253341;
+    border-right: 2px solid #f39c12;
+  }
+
+  /* Five-Star Restaurant */
+  .restaurant .face-front {
+    background: #a84232; /* Rich red-brown */
+    color: #f7e7d0;
+    border: 2px solid #d4af37; /* Gold accent */
+  }
+  .restaurant .face-side {
+    background: #7a3024;
+    border-right: 2px solid #d4af37;
+  }
+
+  /* Concert Arena */
+  .arena .face-front {
+    background: linear-gradient(135deg, #0f0c29 0%, #302b63 100%); /* Dark purple/blue */
+    color: #b0e0e6;
+    border: 2px solid #9b59b6; /* Purple accent */
+  }
+  .arena .face-side {
+    background: #1a1738;
+    border-right: 2px solid #9b59b6;
+  }
+
+  /* Mall Headquarters */
+  .headquarters .face-front {
+    background: linear-gradient(135deg, #7f8c8d 0%, #2c3e50 100%); /* Grey to dark blue */
+    color: #ecf0f1;
+    border: 3px solid #f1c40f; /* Gold accent */
+    font-size: 1.1em; /* Slightly larger text */
+  }
+  .headquarters .face-side {
+    background: #273747;
+    border-right: 3px solid #f1c40f;
+  }
+
+
+  .store h3 {
+    margin: 0 0 8px 0;
+    user-select: text;
+  }
+  .store p {
+    margin: 0 0 10px 0;
+    font-weight: bold;
+    user-select: text;
+  }
+  .store button { /* General button style within stores */
+    padding: 8px 12px;
+    font-size: 0.9em;
+    margin-top: 5px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background-color: #f1c40f;
+    color: #222;
+    font-weight: bold;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    user-select: none;
+    display: block; /* Make buttons stack */
+    width: 100%;
+    box-sizing: border-box; /* Include padding in width */
+  }
+  .store button:hover:not(:disabled) {
+    background-color: #f39c12;
+  }
+  .store button:active:not(:disabled) {
+    transform: scale(0.95);
+  }
+  .store button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  /* Manager button specific style */
+  .store button.manager-btn {
+    background-color: #3498db; /* Blue for managers */
+    color: white;
+  }
+  .store button.manager-btn:hover:not(:disabled) {
+    background-color: #2980b9;
+  }
+  .store button.manager-btn.hired {
+      background-color: #2ecc71; /* Green when hired */
+      cursor: default;
+      opacity: 1;
+  }
+  .store button.manager-btn.hired:hover {
+      background-color: #2ecc71; /* No change on hover when hired */
+      transform: none; /* No transform on hover when hired */
+  }
+
+  /* New Unlock Button Style */
+  .store button.unlock-btn {
+      background-color: #e67e22; /* Orange for unlock */
+      color: white;
+      margin-top: 15px; /* More space for unlock button */
+      font-size: 1.1em;
+      padding: 10px 15px;
+  }
+  .store button.unlock-btn:hover:not(:disabled) {
+      background-color: #d35400;
+  }
+
+
+  /* Prestige Button Style */
+  #prestigeButton {
+    background: #8e44ad; /* Purple */
+    color: white;
+    font-size: 1.2em;
+    padding: 15px 25px;
+    margin-top: 20px;
+    box-shadow: 0 5px 15px rgba(142, 68, 173, 0.4);
+    border-radius: 12px;
+  }
+  #prestigeButton:hover:not(:disabled) {
+    background: #9b59b6;
+    transform: scale(1.02);
+  }
+  #prestigeButton:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  /* Shopper animation */
+  .shopper {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    background: #333;
+    border-radius: 50%;
+    bottom: 10px;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    z-index: 5;
+    user-select: none;
+  }
+  @keyframes walk {
+    0% { left: -50px; }
+    100% { left: 100vw; }
+  }
+  .shopper::before {
+    content: "";
+    display: block;
+    width: 10px;
+    height: 10px;
+    background-color: gold;
+    border-radius: 2px;
+    position: absolute;
+    top: 50%;
+    left: 100%;
+    transform: translateY(-50%);
+  }
+
+  /* Offline popup */
+  #offlinePopup {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #27ae60;
+    color: white;
+    padding: 15px 25px;
+    font-weight: bold;
+    border-radius: 8px;
+    box-shadow: 0 0 20px #27ae60;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+    user-select: none;
+    z-index: 1000;
+  }
+  #offlinePopup.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Audio toggle button */
+  #audioToggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #f1c40f;
+    border: none;
+    padding: 12px 18px;
+    font-weight: bold;
+    border-radius: 10px;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+  }
+  #audioToggle.active {
+    background: #27ae60;
+    color: white;
+  }
+
+  /* Prestige Level Up Message */
+  #prestigeLevelUp {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #8e44ad;
+    color: #fff;
+    padding: 20px 40px;
+    font-size: 2em;
+    border-radius: 15px;
+    z-index: 2000;
+    box-shadow: 0 0 30px #8e44ad;
+    user-select: none;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+
+  /* Leaderboard Styles */
+  #leaderboard {
+    margin-top: 40px;
+    background: #f0f0f0;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    width: 300px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: left;
+  }
+  #leaderboard h2 {
+    text-align: center;
+    margin-top: 0;
+    color: #333;
+  }
+  #leaderboard ol {
+    padding-left: 20px;
+  }
+  #leaderboard li {
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    color: #555;
+  }
+  #leaderboard li:last-child {
+    border-bottom: none;
+  }
+  #leaderboard .rank {
+    font-size: 1.1em;
+    color: #007bff;
+    width: 25px;
+  }
+  #leaderboard .name {
+    flex-grow: 1;
+    margin-left: 10px;
+  }
+  #leaderboard .score {
+    color: #28a745;
+  }
+</style>
+</head>
+<body>
+
+<h1>🏬 Mall Mogul Tycoon - Ultimate Edition</h1>
+
+<div id="levelText">Level 1</div>
+<div id="levelContainer"><div id="levelBar"></div></div>
+
+<div id="prestigePoints">Prestige Points: 0</div>
+<div id="money">Money: $0</div>
+
+<div id="mall"></div>
+
+<button id="prestigeButton" style="display:none;">Prestige! Gain 1 Point</button>
+
+<div id="offlinePopup"></div>
+<div id="prestigeLevelUp" style="display:none;"></div>
+
+<button id="audioToggle">Toggle Mall Sound</button>
+
+<div id="leaderboard">
+  <h2>🏆 Leaderboard (Top 10)</h2>
+  <ol id="leaderboardList"></ol>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+  // Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyCoOa7YGwhIQd1imBJRPuWhSlH1wNoFFa4",
+    authDomain: "mall-tycoon-cdfc5.firebaseapp.com",
+    projectId: "mall-tycoon-cdfc5",
+    storageBucket: "mall-tycoon-cdfc5.firebasestorage.app",
+    messagingSenderId: "627388666562",
+    appId: "1:627388666562:web:07f02c933f4ec640dda15b", // Your new App ID
+    measurementId: "G-L12HSKMN1W", // Your new Measurement ID
+    databaseURL: "https://mall-tycoon-cdfc5-default-rtdb.firebaseio.com" // Crucial for Realtime Database
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  // Helper function to safely load numeric values from localStorage
+  function loadNumericValue(key, defaultValue) {
+    const value = localStorage.getItem(key);
+    const parsed = parseFloat(value);
+    // Check if parsed is a finite number, otherwise return defaultValue
+    return isFinite(parsed) ? parsed : defaultValue;
+  }
+
+  // Game state variables
+  let money = loadNumericValue("money", 0);
+  let level = loadNumericValue("level", 1);
+  let xp = loadNumericValue("xp", 0);
+  let lastTimestamp = loadNumericValue("lastTimestamp", Date.now());
+  let prestigePoints = loadNumericValue("prestigePoints", 0);
+  let totalMoneyEarned = loadNumericValue("totalMoneyEarned", 0);
+  let playerName = localStorage.getItem("playerName"); // Load existing username or null
+
+  const initialStoresData = [
+    { name: "Coffee Shop", cost: 30, income: 0.2, class: "coffee", upgrades: 0, hasManager: false, managerCost: 150, unlockCost: 0, isUnlocked: true },
+    { name: "Shoe Store", cost: 200, income: 0.8, class: "shoes", upgrades: 0, hasManager: false, managerCost: 800, unlockCost: 1000, isUnlocked: false },
+    { name: "Arcade", cost: 1000, income: 3, class: "arcade", upgrades: 0, hasManager: false, managerCost: 4000, unlockCost: 5000, isUnlocked: false },
+    { name: "Luxury Boutique", cost: 4000, income: 10, class: "luxury", upgrades: 0, hasManager: false, managerCost: 15000, unlockCost: 20000, isUnlocked: false },
+    { name: "Electronics Store", cost: 15000, income: 30, class: "electronics", upgrades: 0, hasManager: false, managerCost: 60000, unlockCost: 75000, isUnlocked: false },
+    { name: "Food Court", cost: 50000, income: 90, class: "foodcourt", upgrades: 0, hasManager: false, managerCost: 200000, unlockCost: 300000, isUnlocked: false },
+    { name: "Cinema", cost: 200000, income: 250, class: "cinema", upgrades: 0, hasManager: false, managerCost: 800000, unlockCost: 1200000, isUnlocked: false },
+    { name: "Indoor Theme Park", cost: 800000, income: 600, class: "themepark", upgrades: 0, hasManager: false, managerCost: 3000000, unlockCost: 4000000, isUnlocked: false },
+    { name: "Luxury Car Dealership", cost: 3000000, income: 1500, class: "cardealership", upgrades: 0, hasManager: false, managerCost: 10000000, unlockCost: 15000000, isUnlocked: false },
+    { name: "Five-Star Restaurant", cost: 10000000, income: 4000, class: "restaurant", upgrades: 0, hasManager: false, managerCost: 35000000, unlockCost: 50000000, isUnlocked: false },
+    { name: "Concert Arena", cost: 50000000, income: 12000, class: "arena", upgrades: 0, hasManager: false, managerCost: 150000000, unlockCost: 200000000, isUnlocked: false },
+    { name: "Mall Headquarters", cost: 250000000, income: 0, class: "headquarters", upgrades: 0, hasManager: false, managerCost: 0, unlockCost: 1000000000, isUnlocked: false }
+  ];
+  let stores = JSON.parse(localStorage.getItem("stores")) || JSON.parse(JSON.stringify(initialStoresData));
+
+  // When loading stores, ensure new properties are initialized if they don't exist in old saves
+  if (localStorage.getItem("stores")) {
+      const savedStores = JSON.parse(localStorage.getItem("stores"));
+      stores = initialStoresData.map((initialStore, index) => {
+          const loadedStore = savedStores[index];
+          return {
+              ...initialStore, // Start with initial definition
+              ...loadedStore, // Override with loaded values
+              hasManager: typeof loadedStore?.hasManager === 'boolean' ? loadedStore.hasManager : initialStore.hasManager,
+              managerCost: typeof loadedStore?.managerCost === 'number' ? loadedStore.managerCost : initialStore.managerCost,
+              isUnlocked: typeof loadedStore?.isUnlocked === 'boolean' ? loadedStore.isUnlocked : initialStore.isUnlocked,
+              unlockCost: typeof loadedStore?.unlockCost === 'number' ? loadedStore.unlockCost : initialStore.unlockCost
+          };
+      });
+  }
+
+
+  // DOM Elements
+  const moneyDisplay = document.getElementById("money");
+  const mallDiv = document.getElementById("mall");
+  const levelText = document.getElementById("levelText");
+  const levelBar = document.getElementById("levelBar");
+  const offlinePopup = document.getElementById("offlinePopup");
+  const audioToggle = document.getElementById("audioToggle");
+  const prestigePointsDisplay = document.getElementById("prestigePoints");
+  const prestigeButton = document.getElementById("prestigeButton");
+  const prestigeLevelUpMessage = document.getElementById("prestigeLevelUp");
+  const leaderboardList = document.getElementById("leaderboardList");
+
+  // Sounds
+  const incomeSound = new Audio("https://freesound.org/data/previews/341/341695_6248127-lq.mp3"); // chime sound
+  const buySound = new Audio("https://freesound.org/data/previews/256/256113_3263906-lq.mp3"); // click sound
+  const prestigeSound = new Audio("https://freesound.org/data/previews/391/391539_5122137-lq.mp3"); // "ding" or "success" sound
+  const managerSound = new Audio("https://freesound.org/data/previews/140/140417_2627915-lq.mp3"); // manager hired sound (e.g., a short success jingle)
+  const ambientAudio = new Audio("https://cdn.pixabay.com/download/audio/2022/03/27/audio_f94e2475ab.mp3?filename=mall-ambient-sound-4316.mp3");
+  ambientAudio.loop = true;
+  ambientAudio.volume = 0.2;
+  let audioPlaying = false;
+
+  audioToggle.onclick = () => {
+    if (audioPlaying) {
+      ambientAudio.pause();
+      audioPlaying = false;
+      audioToggle.classList.remove("active");
+      audioToggle.textContent = "Play Mall Sound";
+    } else {
+      ambientAudio.play();
+      audioPlaying = true;
+      audioToggle.classList.add("active");
+      audioToggle.textContent = "Pause Mall Sound";
+    }
+  };
+
+  // Experience and leveling
+  function getXPNeeded(level) {
+    return 500 * Math.pow(2.0, level - 1);
+  }
+
+  function getMoneyNeededForLevel(level) {
+      return 5000 * Math.pow(10, level - 1);
+  }
+
+  function gainXP(amount) {
+    xp += amount;
+    while (xp >= getXPNeeded(level) && totalMoneyEarned >= getMoneyNeededForLevel(level)) {
+      xp -= getXPNeeded(level);
+      level++;
+      showLevelUp();
+      saveGame();
+    }
+    updateLevelUI();
+    checkPrestigeEligibility();
+  }
+
+  function updateLevelUI() {
+    levelText.textContent = `Level ${level}`;
+    const xpProgress = (xp / getXPNeeded(level));
+    const moneyProgress = (totalMoneyEarned / getMoneyNeededForLevel(level));
+
+    const overallProgress = Math.min(xpProgress, moneyProgress);
+    levelBar.style.width = (overallProgress * 100) + "%";
+
+    const nextLevelXP = getXPNeeded(level);
+    const nextLevelMoney = getMoneyNeededForLevel(level);
+    let levelInfo = `Level ${level}<br>XP: ${formatNumber(xp)} / ${formatNumber(nextLevelXP)}`;
+    if (totalMoneyEarned < nextLevelMoney) {
+        levelInfo += `<br>Money Earned: $${formatNumber(totalMoneyEarned)} / $${formatNumber(nextLevelMoney)}`;
+    }
+    document.getElementById("levelText").innerHTML = levelInfo;
+  }
+
+  function showLevelUp() {
+    const lvlUp = document.createElement("div");
+    lvlUp.textContent = `🎉 Level Up! You reached Level ${level}! 🎉`;
+    lvlUp.style.position = "fixed";
+    lvlUp.style.top = "50%";
+    lvlUp.style.left = "50%";
+    lvlUp.style.transform = "translate(-50%, -50%)";
+    lvlUp.style.background = "#27ae60";
+    lvlUp.style.color = "#fff";
+    lvlUp.style.padding = "20px 40px";
+    lvlUp.style.fontSize = "2em";
+    lvlUp.style.borderRadius = "15px";
+    lvlUp.style.zIndex = "2000";
+    lvlUp.style.boxShadow = "0 0 30px #27ae60";
+    lvlUp.style.userSelect = "none";
+    document.body.appendChild(lvlUp);
+    setTimeout(() => lvlUp.remove(), 3000);
+  }
+
+  // Render stores with upgrades and buttons
+  function renderStores() {
+    mallDiv.innerHTML = "";
+    stores.forEach((store, index) => {
+      const storeDiv = document.createElement("div");
+      storeDiv.className = `store ${store.class}`;
+
+      if (!store.isUnlocked) {
+          storeDiv.classList.add("locked");
+      }
+
+      if(store.class === "themepark" || store.class === "headquarters") {
+          storeDiv.style.cursor = "default";
+          storeDiv.style.transform = "none";
+          storeDiv.style.boxShadow = "none";
+      }
+
+      const managerBonus = store.hasManager ? 1.5 : 1;
+      const currentPrestigeMultiplier = 1 + (isFinite(prestigePoints) ? prestigePoints : 0) * 0.05;
+      const effectiveIncome = (store.income * Math.pow(1.5, store.upgrades) * managerBonus) * currentPrestigeMultiplier;
+
+      let storeContentHTML = '';
+
+      if (store.isUnlocked) {
+        let managerButtonHTML = '';
+        if (store.hasManager) {
+            managerButtonHTML = `<button class="manager-btn hired" disabled>Manager Hired!</button>`;
+        } else if (store.class === "headquarters") {
+            managerButtonHTML = `<button class="manager-btn hired" disabled>No Manager Needed</button>`;
+        }
+        else {
+            managerButtonHTML = `<button class="manager-btn" ${money < store.managerCost ? "disabled" : ""} onclick="hireManager(${index})">Hire Manager: $${formatNumber(store.managerCost)}</button>`;
+        }
+
+        storeContentHTML = `
+            <h3>${store.name}</h3>
+            <p>Income: $${effectiveIncome.toFixed(1)}/s</p>
+            <p>Upgrades: ${store.upgrades}</p>
+            <button ${money < store.cost ? "disabled" : ""} onclick="buyStore(${index})">Buy for $${formatNumber(store.cost)}</button>
+            <button ${money < getUpgradeCost(store) ? "disabled" : ""} onclick="upgradeStore(${index})">Upgrade for $${formatNumber(getUpgradeCost(store))}</button>
+            ${managerButtonHTML}
+        `;
+
+        if (!store.hasManager && store.class !== "themepark" && store.class !== "headquarters") {
+            storeDiv.onclick = () => {
+                manualStoreIncome(store);
+            };
+            storeDiv.style.border = "2px solid #e74c3c";
+            storeDiv.style.boxShadow = "0 0 10px rgba(231, 76, 60, 0.5)";
+            storeDiv.style.cursor = "pointer";
+        } else {
+            storeDiv.onclick = null;
+            storeDiv.style.cursor = 'default';
+            storeDiv.style.transform = 'none';
+            storeDiv.style.boxShadow = 'none';
+            storeDiv.style.border = "2px solid #333";
+        }
+
+      } else {
+        storeContentHTML = `
+            <h3>${store.name} (Locked)</h3>
+            <p>Unlock for: $${formatNumber(store.unlockCost)}</p>
+            <button class="unlock-btn" ${money < store.unlockCost ? "disabled" : ""} onclick="unlockStore(${index})">Unlock Store</button>
+        `;
+        storeDiv.onclick = null;
+        storeDiv.style.cursor = 'not-allowed';
+        storeDiv.style.transform = 'none';
+        storeDiv.style.boxShadow = 'none';
+      }
+
+      storeDiv.innerHTML = `
+        <div class="face-front">
+            ${storeContentHTML}
+        </div>
+        <div class="face-side"></div>
+      `;
+
+      if (store.isUnlocked) {
+        if (store.class === "coffee") {
+          const steamContainer = document.createElement("div");
+          steamContainer.className = "steam-container";
+          for (let i=1; i<=3; i++) {
+            const steamLine = document.createElement("div");
+            steamLine.className = `steam-line`;
+            steamContainer.appendChild(steamLine);
+          }
+          storeDiv.querySelector(".face-front").appendChild(steamContainer);
+        }
+        if (store.class === "arcade") {
+          const glow = document.createElement("div");
+          glow.className = "arcade-glow";
+          storeDiv.querySelector(".face-front").appendChild(glow);
+        }
+        if (store.class === "luxury") {
+          for(let i=1; i<=4; i++) {
+            const sparkle = document.createElement("div");
+            sparkle.className = `sparkle sparkle${i}`;
+            storeDiv.querySelector(".face-front").appendChild(sparkle);
+          }
+        }
+      }
+
+      mallDiv.appendChild(storeDiv);
+    });
+  }
+
+  // Manual store income for non-managed stores
+  function manualStoreIncome(store) {
+      if (store.isUnlocked && !store.hasManager && store.class !== "themepark" && store.class !== "headquarters") {
+          const currentPrestigeMultiplier = 1 + (isFinite(prestigePoints) ? prestigePoints : 0) * 0.05;
+          const incomeAmount = (store.income * Math.pow(1.5, store.upgrades)) * currentPrestigeMultiplier * 0.1;
+          money += incomeAmount;
+          totalMoneyEarned += incomeAmount;
+          gainXP(incomeAmount / 2);
+          showFloatingText(`+$${incomeAmount.toFixed(1)}`);
+          if(audioPlaying) incomeSound.play();
+          updateUI();
+          saveGame();
+          saveToLeaderboard();
+      }
+  }
+
+  // Store buy
+  function buyStore(index) {
+    const store = stores[index];
+    if (store.isUnlocked && money >= store.cost) {
+      money -= store.cost;
+      totalMoneyEarned += store.cost;
+      buySound.play();
+      store.cost = Math.floor(store.cost * 2);
+      store.income *= 1.5;
+      updateUI();
+      saveGame();
+      saveToLeaderboard();
+      showFloatingText(`-$${formatNumber(store.cost)}`, false);
+      checkPrestigeEligibility();
+    }
+  }
+
+  // Get upgrade cost (exponential scaling)
+  function getUpgradeCost(store) {
+    return Math.floor(100 * Math.pow(2.2, store.upgrades));
+  }
+
+  // Upgrade store
+  function upgradeStore(index) {
+    const store = stores[index];
+    if (!store.isUnlocked) return;
+    const cost = getUpgradeCost(store);
+    if (money >= cost) {
+      money -= cost;
+      totalMoneyEarned += cost;
+      buySound.play();
+      store.upgrades++;
+      updateUI();
+      saveGame();
+      saveToLeaderboard();
+      showFloatingText(`-$${formatNumber(cost)}`, false);
+      checkPrestigeEligibility();
+    }
+  }
+
+  // Hire Manager Function
+  function hireManager(index) {
+      const store = stores[index];
+      if (!store.isUnlocked) return;
+      if (money >= store.managerCost && !store.hasManager) {
+          money -= store.managerCost;
+          totalMoneyEarned += store.managerCost;
+          store.hasManager = true;
+          managerSound.play();
+          showFloatingText(`-$${formatNumber(store.managerCost)}`, false);
+          updateUI();
+          saveGame();
+          saveToLeaderboard();
+      }
+  }
+
+  // Unlock a store
+  function unlockStore(index) {
+      const store = stores[index];
+      if (!store.isUnlocked && money >= store.unlockCost) {
+          money -= store.unlockCost;
+          totalMoneyEarned += store.unlockCost;
+          store.isUnlocked = true;
+          buySound.play();
+          showFloatingText(`-$${formatNumber(store.unlockCost)}`, false);
+          updateUI();
+          saveGame();
+          saveToLeaderboard();
+      }
+  }
+
+  // Show floating text for income or expense
+  function showFloatingText(text, positive = true) {
+    const float = document.createElement("div");
+    float.className = "float-money";
+    float.textContent = (positive ? "+" : "") + text;
+    float.style.left = `${Math.random() * 80 + 10}%`;
+    float.style.top = "50%";
+    float.style.color = positive ? "#27ae60" : "#e74c3c";
+    document.body.appendChild(float);
+    setTimeout(() => float.remove(), 1200);
+  }
+
+  // Animate money count for smooth increase
+  let displayedMoney = money;
+  function animateMoneyDisplay() {
+    if (isNaN(money) || !isFinite(money)) {
+        money = 0;
+        console.warn("Money became NaN/Infinity, resetting to 0.");
+    }
+    if (displayedMoney !== money) {
+      let diff = money - displayedMoney;
+      if (Math.abs(diff) < 0.1) {
+        displayedMoney = money;
+      } else {
+        displayedMoney += diff * 0.1;
+      }
+      moneyDisplay.textContent = `Money: $${formatNumber(displayedMoney)}`;
+    }
+    requestAnimationFrame(animateMoneyDisplay);
+  }
+
+  // Function to format large numbers
+  function formatNumber(num) {
+    if (isNaN(num) || !isFinite(num)) {
+        return "NaN";
+    }
+
+    if (num >= 1000000000000000) return (num / 1000000000000000).toFixed(2) + "Q";
+    if (num >= 1000000000000) return (num / 1000000000000).toFixed(2) + "T";
+    if (num >= 1000000000) return (num / 1000000000).toFixed(2) + "B";
+    if (num >= 1000000) return (num / 1000000).toFixed(2) + "M";
+    if (num >= 1000) return (num / 1000).toFixed(2) + "K";
+    if (num < 10) return num.toFixed(2);
+    return num.toFixed(1);
+  }
+
+  // Save game to localStorage
+  function saveGame() {
+    localStorage.setItem("money", money);
+    localStorage.setItem("level", level);
+    localStorage.setItem("xp", xp);
+    localStorage.setItem("lastTimestamp", Date.now());
+    localStorage.setItem("stores", JSON.stringify(stores));
+    localStorage.setItem("prestigePoints", prestigePoints);
+    localStorage.setItem("totalMoneyEarned", totalMoneyEarned);
+    localStorage.setItem("playerName", playerName); // Save the chosen username
+  }
+
+  // Load game to handle new 'hasManager' property and new stores
+  function loadGame() {
+    const savedStores = localStorage.getItem("stores");
+    if (savedStores) {
+      try {
+        const parsedSavedStores = JSON.parse(savedStores);
+        stores = initialStoresData.map((initialStore, index) => {
+          const loadedStore = parsedSavedStores[index];
+          if (loadedStore) {
+            return {
+              ...initialStore,
+              ...loadedStore,
+              hasManager: typeof loadedStore.hasManager === 'boolean' ? loadedStore.hasManager : false,
+              managerCost: typeof loadedStore.managerCost === 'number' ? loadedStore.managerCost : initialStore.managerCost,
+              isUnlocked: typeof loadedStore.isUnlocked === 'boolean' ? loadedStore.isUnlocked : initialStore.isUnlocked,
+              unlockCost: typeof loadedStore.unlockCost === 'number' ? loadedStore.unlockCost : initialStore.unlockCost
+            };
+          }
+          return initialStore;
+        });
+      } catch (e) {
+        console.error("Error parsing saved stores:", e);
+        stores = JSON.parse(JSON.stringify(initialStoresData));
+      }
+    } else {
+        stores = JSON.parse(JSON.stringify(initialStoresData));
+        stores.forEach((store, i) => {
+            if (i > 0) {
+                store.isUnlocked = false;
+            } else {
+                store.isUnlocked = true;
+            }
+        });
+    }
+  }
+
+  // Save to leaderboard firebase
+  function saveToLeaderboard() {
+    // Only save if a playerName is set
+    if (playerName && playerName.trim() !== "") {
+        db.ref("leaderboard/" + playerName).set({
+            username: playerName,
+            money: money,
+            totalMoneyEarned: totalMoneyEarned,
+            prestigePoints: prestigePoints
+        }).catch(error => {
+            console.error("Error saving to leaderboard:", error);
+        });
+    }
+  }
+
+  // Load leaderboard from firebase
+  function loadLeaderboard() {
+      const leaderboardRef = db.ref("leaderboard").orderByChild("money").limitToLast(10);
+
+      leaderboardRef.on("value", (snapshot) => {
+          const scores = [];
+          snapshot.forEach((childSnapshot) => {
+              scores.push(childSnapshot.val());
+          });
+          scores.sort((a, b) => b.money - a.money);
+
+          leaderboardList.innerHTML = "";
+          scores.forEach((player, index) => {
+              const listItem = document.createElement("li");
+              listItem.innerHTML = `
+                  <span class="rank">${index + 1}.</span>
+                  <span class="name">${player.username}</span>
+                  <span class="score">$${formatNumber(player.money)}</span>
+              `;
+              leaderboardList.appendChild(listItem);
+          });
+      }, (error) => {
+          console.error("Error loading leaderboard:", error);
+      });
+  }
+
+  // Spawn shoppers
+  function spawnShopper() {
+    const shopper = document.createElement("div");
+    shopper.className = "shopper";
+    shopper.style.top = `${Math.random() * 300 + 100}px`;
+    const size = Math.random() * 20 + 15;
+    shopper.style.width = `${size}px`;
+    shopper.style.height = `${size}px`;
+    shopper.style.animationDuration = `${Math.random() * 6 + 3}s`;
+    document.body.appendChild(shopper);
+    setTimeout(() => shopper.remove(), 10000);
+  }
+
+  // Passive income tick every second
+  function incomeTick() {
+    if (isNaN(money) || !isFinite(money)) {
+        money = 0;
+        console.warn("Money was NaN/Infinity at incomeTick start, resetting to 0.");
+    }
+    if (isNaN(totalMoneyEarned) || !isFinite(totalMoneyEarned)) {
+        totalMoneyEarned = 0;
+        console.warn("totalMoneyEarned was NaN/Infinity at incomeTick start, resetting to 0.");
+    }
+    if (isNaN(prestigePoints) || !isFinite(prestigePoints)) {
+        prestigePoints = 0;
+        console.warn("prestigePoints was NaN/Infinity at incomeTick start, resetting to 0.");
+    }
+    if (isNaN(level) || !isFinite(level)) {
+        level = 1;
+        console.warn("Level was NaN/Infinity at incomeTick start, resetting to 1.");
+    }
+    if (isNaN(xp) || !isFinite(xp)) {
+        xp = 0;
+        console.warn("XP was NaN/Infinity at incomeTick start, resetting to 0.");
+    }
+
+    let totalIncome = 0;
+    stores.forEach(store => {
+      if (store.isUnlocked && store.hasManager && store.class !== "headquarters") {
+        const managerBonus = 1.5;
+        const storeIncome = (store.income * Math.pow(1.5, store.upgrades)) * managerBonus;
+        totalIncome += storeIncome;
+      }
+    });
+
+    const currentPrestigeMultiplier = 1 + (isFinite(prestigePoints) ? prestigePoints : 0) * 0.05;
+    const finalIncome = totalIncome * currentPrestigeMultiplier;
+
+    money += finalIncome;
+    totalMoneyEarned += finalIncome;
+
+    gainXP(finalIncome / 2);
+    if(audioPlaying) incomeSound.play();
+
+    updateUI();
+    saveGame();
+    saveToLeaderboard();
+  }
+
+  // Update UI
+  function updateUI() {
+    moneyDisplay.textContent = `Money: $${formatNumber(money)}`;
+    prestigePointsDisplay.textContent = `Prestige Points: ${prestigePoints}`;
+    renderStores();
+    updateLevelUI();
+    checkPrestigeEligibility();
+  }
+
+  // Offline progress calculation
+  function calculateOfflineProgress() {
+    const now = Date.now();
+    const elapsed = now - lastTimestamp;
+    if (elapsed > 60000) {
+      const secondsAway = Math.floor(elapsed / 1000);
+      let totalIncomePerSecond = 0;
+      stores.forEach(store => {
+        if (store.isUnlocked && store.hasManager && store.class !== "headquarters") {
+          const managerBonus = 1.5;
+          const storeIncome = (store.income * Math.pow(1.5, store.upgrades)) * managerBonus;
+          totalIncomePerSecond += storeIncome;
+        }
+      });
+      const currentPrestigeMultiplier = 1 + (isFinite(prestigePoints) ? prestigePoints : 0) * 0.05;
+      const offlineEarnings = totalIncomePerSecond * secondsAway * currentPrestigeMultiplier;
+      money += offlineEarnings;
+      totalMoneyEarned += offlineEarnings;
+      gainXP(offlineEarnings / 2);
+      showOfflinePopup(offlineEarnings.toFixed(1));
+    }
+    lastTimestamp = now;
+  }
+
+  // Show offline earnings popup
+  function showOfflinePopup(amount) {
+    offlinePopup.textContent = `Welcome back! You earned $${formatNumber(amount)} while away.`;
+    offlinePopup.classList.add("show");
+    setTimeout(() => offlinePopup.classList.remove("show"), 6000);
+  }
+
+  // Prestige System Logic
+  const PRESTIGE_MIN_LEVEL = 20;
+  const PRESTIGE_MONEY_THRESHOLD = 500000;
+
+  function checkPrestigeEligibility() {
+    const currentLevel = isFinite(level) ? level : 1;
+    const currentTotalMoneyEarned = isFinite(totalMoneyEarned) ? currentTotalMoneyEarned : 0;
+
+    const isEligible = currentLevel >= PRESTIGE_MIN_LEVEL || currentTotalMoneyEarned >= PRESTIGE_MONEY_THRESHOLD;
+
+    if (isEligible) {
+      prestigeButton.style.display = "block";
+      prestigeButton.textContent = `Prestige! Gain ${getPrestigePointsToAward()} Point${getPrestigePointsToAward() > 1 ? 's' : ''}!`;
+    } else {
+      prestigeButton.style.display = "none";
+    }
+  }
+
+  function getPrestigePointsToAward() {
+    const currentLevel = isFinite(level) ? level : 1;
+    const currentTotalMoneyEarned = isFinite(totalMoneyEarned) ? currentTotalMoneyEarned : 0;
+
+    let points = 1;
+    if (currentLevel >= PRESTIGE_MIN_LEVEL) {
+      points += Math.floor((currentLevel - PRESTIGE_MIN_LEVEL) / 5);
+    }
+    if (currentTotalMoneyEarned >= PRESTIGE_MONEY_THRESHOLD) {
+      points += Math.floor(currentTotalMoneyEarned / PRESTIGE_MONEY_THRESHOLD / 2);
+    }
+    return Math.max(1, points);
+  }
+
+  function doPrestige() {
+    if (!confirm("Are you sure you want to Prestige? You will reset your progress but gain a permanent bonus!")) {
+      return;
+    }
+
+    const pointsGained = getPrestigePointsToAward();
+    prestigePoints += pointsGained;
+
+    money = 0;
+    level = 1;
+    xp = 0;
+    lastTimestamp = Date.now();
+    stores = JSON.parse(JSON.stringify(initialStoresData));
+    stores.forEach((store, i) => {
+        if (i > 0) {
+            store.isUnlocked = false;
+        } else {
+            store.isUnlocked = true;
+        }
+    });
+    totalMoneyEarned = 0;
+
+    prestigeSound.play();
+
+    prestigeLevelUpMessage.textContent = `💫 Prestige Complete! You gained ${pointsGained} Prestige Point${pointsGained > 1 ? 's' : ''}! Income boosted!`;
+    prestigeLevelUpMessage.style.display = "block";
+    prestigeLevelUpMessage.style.opacity = 1;
+    setTimeout(() => {
+      prestigeLevelUpMessage.style.opacity = 0;
+      setTimeout(() => prestigeLevelUpMessage.style.display = "none", 500);
+    }, 4000);
+
+
+    updateUI();
+    saveGame();
+    saveToLeaderboard();
+  }
+
+  prestigeButton.onclick = doPrestige;
+
+  // Ask for username on initial load
+  function askForUsername() {
+    if (!playerName) { // Only ask if playerName is not already set in localStorage
+      let newName = prompt("Welcome, new Mogul! Please enter your desired username for the leaderboard:", "");
+      if (newName && newName.trim() !== "") {
+        playerName = newName.trim();
+        localStorage.setItem("playerName", playerName);
+        alert(`Welcome, ${playerName}! Your progress will now be saved under this name.`);
+      } else {
+        // If they cancel or enter empty name, assign a generic one
+        playerName = "Mogul" + Math.floor(Math.random() * 100000);
+        localStorage.setItem("playerName", playerName);
+        alert(`No username entered. You'll be "Mogul${Math.floor(Math.random() * 100000)}" on the leaderboard.`);
+      }
+    }
+  }
+
+
+  // Initial setup
+  function init() {
+    askForUsername(); // Call this first to get the username
+    loadGame();
+    calculateOfflineProgress();
+    updateUI();
+    animateMoneyDisplay();
+    checkPrestigeEligibility();
+    loadLeaderboard();
+  }
+
+  // Run intervals
+  setInterval(incomeTick, 1000);
+  setInterval(spawnShopper, 2500);
+  setInterval(saveToLeaderboard, 30000); // Save to leaderboard every 30 seconds
+
+
+  // Save game before exit
+  window.addEventListener("beforeunload", saveGame);
+
+  // Start game
+  init();
+
+  // Make functions globally accessible for HTML buttons
+  window.buyStore = buyStore;
+  window.upgradeStore = upgradeStore;
+  window.hireManager = hireManager;
+  window.unlockStore = unlockStore;
+</script>
+
+</body>
+</html>
